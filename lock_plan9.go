@@ -17,39 +17,73 @@ limitations under the License.
 package lock
 
 import (
-	"fmt"
-	"io"
 	"os"
 	"path/filepath"
+	"sync"
 )
 
-func init() {
-	lockFn = lockPlan9
+// Flock Is not test on plan9
+type Flock struct {
+	path    string
+	absPath string
+	mu      sync.RWMutex
+	fh      *os.File
+	locked  bool
 }
 
-func lockPlan9(name string) (io.Closer, error) {
-	var f *os.File
-	abs, err := filepath.Abs(name)
+func NewFlock(path string) FLocker {
+	f := &Flock{path: path}
+	f.absPath, _ = filepath.Abs(path)
+	return f
+}
+
+func (f *Flock) Lock() error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	if f.locked {
+		return nil
+	}
+
+	fh, err := os.OpenFile(f.absPath, os.O_RDWR|os.O_CREATE, os.ModeExclusive|0644)
 	if err != nil {
-		return nil, err
-	}
-	lockmu.Lock()
-	if locked[abs] {
-		lockmu.Unlock()
-		return nil, fmt.Errorf("file %q already locked", abs)
-	}
-	locked[abs] = true
-	lockmu.Unlock()
-
-	fi, err := os.Stat(name)
-	if err == nil && fi.Size() > 0 {
-		return nil, fmt.Errorf("can't Lock file %q: has non-zero size", name)
+		return err
 	}
 
-	f, err = os.OpenFile(name, os.O_RDWR|os.O_CREATE, os.ModeExclusive|0644)
-	if err != nil {
-		return nil, fmt.Errorf("Lock Create of %s (abs: %s) failed: %v", name, abs, err)
+	f.locked = err == nil
+	if f.locked {
+		f.fh = fh
+	}
+	return err
+}
+
+func (f *Flock) TryLock() error {
+	return f.Lock()
+}
+
+func (f *Flock) Unlock() error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	if !f.locked {
+		return ErrUnlock
 	}
 
-	return &unlocker{f, abs}, nil
+	err := f.fh.Close()
+	if err == nil {
+		f.locked = false
+		f.fh = nil
+	}
+	return err
+}
+
+func (f *Flock) Locked() bool {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+
+	return f.locked
+}
+
+func (f *Flock) Path() string {
+	return f.path
 }
