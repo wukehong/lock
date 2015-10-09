@@ -19,8 +19,12 @@ limitations under the License.
 package lock
 
 import (
+	"fmt"
 	"io"
+	"os"
+	"path/filepath"
 	"syscall"
+	"unsafe"
 )
 
 const (
@@ -44,10 +48,11 @@ func init() {
 	// use LockFileEx, if possible
 	h, err := syscall.LoadLibrary("kernel32.dll")
 	if err == nil {
-	if procLockFileEx, err = syscall.GetProcAddress(h, "LockFileEx"); err != nil {
-		procLockFileEx = 0
-	} else {
-		lockFn = lockFileEx
+		if procLockFileEx, err = syscall.GetProcAddress(h, "LockFileEx"); err != nil {
+			procLockFileEx = 0
+		} else {
+			lockFn = lockFileEx
+		}
 	}
 }
 
