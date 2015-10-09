@@ -1,4 +1,4 @@
-// +build !lockfileex
+// +build windows
 
 /*
 Copyright 2013 The Go Authors
@@ -19,8 +19,8 @@ limitations under the License.
 package lock
 
 import (
-	"io"
 	"path/filepath"
+	"sync"
 	"syscall"
 )
 
@@ -29,38 +29,72 @@ const (
 	_FILE_FLAG_DELETE_ON_CLOSE = 0x04000000
 )
 
-func init() {
-	// sane default
-	lockFn = lockCreateFile
+type Flock struct {
+	path      string
+	absPath   string
+	utf16Path *uint16
+	mu        sync.RWMutex
+	fh        syscall.Handle
+	locked    bool
 }
 
-type handleUnlocker struct {
-	h syscall.Handle
+func NewFlock(path string) FLocker {
+	f := &Flock{path: path}
+	f.absPath, _ = filepath.Abs(path)
+	f.utf16Path, _ = syscall.UTF16PtrFromString(f.absPath)
+	return f
 }
 
-func (hu *handleUnlocker) Close() error {
-	return syscall.Close(hu.h)
-}
+func (f *Flock) Lock() error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 
-func lockCreateFile(name string) (io.Closer, error) {
-	absName, err := filepath.Abs(name)
-	if err != nil {
-		return nil, err
+	if f.locked {
+		return nil
 	}
-	pName, err := syscall.UTF16PtrFromString(absName)
-	if err != nil {
-		return nil, err
-	}
+
 	// http://msdn.microsoft.com/en-us/library/windows/desktop/aa363858%28v=vs.85%29.aspx
-	h, err := syscall.CreateFile(pName,
+	fh, err := syscall.CreateFile(f.utf16Path,
 		syscall.GENERIC_WRITE, // open for write
 		0,   // no sharing
 		nil, // don't let children inherit
 		syscall.CREATE_ALWAYS, // create if not exists, truncate if does
 		syscall.FILE_ATTRIBUTE_NORMAL|_FILE_ATTRIBUTE_TEMPORARY|_FILE_FLAG_DELETE_ON_CLOSE,
 		0)
-	if err != nil {
-		return nil, err
+	f.locked = err == nil
+	if f.locked {
+		f.fh = fh
 	}
-	return &handleUnlocker{h}, nil
+	return err
+}
+
+func (f *Flock) TryLock() error {
+	return f.Lock()
+}
+
+func (f *Flock) Unlock() error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	if !f.locked {
+		return ErrUnlock
+	}
+
+	err := syscall.Close(f.fh)
+	if err == nil {
+		f.locked = false
+		f.fh = 0
+	}
+	return err
+}
+
+func (f *Flock) Locked() bool {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+
+	return f.locked
+}
+
+func (f *Flock) Path() string {
+	return f.path
 }
