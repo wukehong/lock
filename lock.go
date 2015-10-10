@@ -30,7 +30,7 @@ type Flocker interface {
 	// If we are already locked, this function short-circuits and returns immediately
 	//
 	// 非阻塞锁定文件，如果Locked()为true，则立即返回nil
-	Lock() error
+	NBLock() error
 
 	// Unlock is a function to unlock the file.
 	// If we are already unlocked, this function short-circuits and returns immediately

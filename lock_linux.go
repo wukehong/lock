@@ -59,7 +59,7 @@ func (f *flock) String() string {
 	}
 }
 
-func (f *flock) Lock() error {
+func (f *flock) NBLock() error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
