@@ -29,7 +29,7 @@ const (
 	_FILE_FLAG_DELETE_ON_CLOSE = 0x04000000
 )
 
-type Flock struct {
+type flock struct {
 	path      string
 	absPath   string
 	utf16Path *uint16
@@ -39,13 +39,13 @@ type Flock struct {
 }
 
 func NewFlock(path string) FLocker {
-	f := &Flock{path: path}
+	f := &flock{path: path}
 	f.absPath, _ = filepath.Abs(path)
 	f.utf16Path, _ = syscall.UTF16PtrFromString(f.absPath)
 	return f
 }
 
-func (f *Flock) Lock() error {
+func (f *flock) Lock() error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
@@ -68,11 +68,11 @@ func (f *Flock) Lock() error {
 	return err
 }
 
-func (f *Flock) TryLock() error {
+func (f *flock) TryLock() error {
 	return f.Lock()
 }
 
-func (f *Flock) Unlock() error {
+func (f *flock) Unlock() error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
@@ -88,13 +88,13 @@ func (f *Flock) Unlock() error {
 	return err
 }
 
-func (f *Flock) Locked() bool {
+func (f *flock) Locked() bool {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 
 	return f.locked
 }
 
-func (f *Flock) Path() string {
+func (f *flock) Path() string {
 	return f.path
 }

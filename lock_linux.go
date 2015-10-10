@@ -25,7 +25,7 @@ import (
 
 // Flock is the struct type to handle file locking. All fields are unexported,
 // with access to some of the fields provided by getter methods (Path() and Locked()).
-type Flock struct {
+type flock struct {
 	path    string
 	absPath string
 	mu      sync.RWMutex
@@ -36,25 +36,25 @@ type Flock struct {
 // NewFlock is a function to return a new instance of *Flock. The only parameter
 // it takes is the path to the desired lockfile.
 func NewFlock(path string) FLocker {
-	f := &Flock{path: path}
+	f := &flock{path: path}
 	f.absPath, _ = filepath.Abs(path)
 	return f
 }
 
 // Path is a function to return the path as provided in NewFlock().
-func (f *Flock) Path() string {
+func (f *flock) Path() string {
 	return f.path
 }
 
 // Locked is a function to return the current lock state (locked: true, unlocked: false).
-func (f *Flock) Locked() bool {
+func (f *flock) Locked() bool {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 
 	return f.locked
 }
 
-func (f *Flock) String() string {
+func (f *flock) String() string {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 
@@ -73,7 +73,7 @@ func (f *Flock) String() string {
 //
 // If we are already locked, this function short-circuits and returns immediately
 // assuming it can take the mutex lock.
-func (f *Flock) Lock() error {
+func (f *flock) Lock() error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
@@ -98,7 +98,7 @@ func (f *Flock) Lock() error {
 // This function short-circuits if we are unlocked already. If not, it calls
 // syscall.LOCK_UN on the file and closes the file descriptor It does not remove
 // the file from disk. It's up to your application to do.
-func (f *Flock) Unlock() error {
+func (f *flock) Unlock() error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
@@ -127,7 +127,7 @@ func (f *Flock) Unlock() error {
 // The actual file lock is non-blocking. If we are unable to get the exclusive
 // file lock, the function will return error instead of waiting for the lock.
 // If we get the lock, we also set the *Flock instance as being locked.
-func (f *Flock) TryLock() error {
+func (f *flock) TryLock() error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
@@ -147,7 +147,7 @@ func (f *Flock) TryLock() error {
 	return err
 }
 
-func (f *Flock) setFh() error {
+func (f *flock) setFh() error {
 	// open a new os.File instance
 	// create it if it doesn't exist, truncate it if it does exist, open the file read-write
 	fh, err := os.OpenFile(f.absPath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, os.FileMode(0600))
