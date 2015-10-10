@@ -41,12 +41,10 @@ func NewFlock(path string) FLocker {
 	return f
 }
 
-// Path is a function to return the path as provided in NewFlock().
 func (f *flock) Path() string {
 	return f.path
 }
 
-// Locked is a function to return the current lock state (locked: true, unlocked: false).
 func (f *flock) Locked() bool {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
@@ -66,13 +64,6 @@ func (f *flock) String() string {
 
 }
 
-// Lock is a none-blocking call to try and take the file lock. It will wait until it
-// is able to obtain the exclusive file lock. It's recommended that TryLock() be
-// used over this function. This function may block the ability to query the
-// current Locked() status due to a RW-mutex lock.
-//
-// If we are already locked, this function short-circuits and returns immediately
-// assuming it can take the mutex lock.
 func (f *flock) Lock() error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -93,19 +84,13 @@ func (f *flock) Lock() error {
 	return err
 }
 
-// Unlock is a function to unlock the file. This file takes a RW-mutex lock, so
-// while it is running the Locked() function will be blocked.
-//
-// This function short-circuits if we are unlocked already. If not, it calls
-// syscall.LOCK_UN on the file and closes the file descriptor It does not remove
-// the file from disk. It's up to your application to do.
 func (f *flock) Unlock() error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
 	// if we aren't locked or if the lockfile instance is nil
 	// just return a nil error because we are unlocked
-	if !f.locked || f.fh == nil {
+	if !f.locked {
 		return ErrUnlock
 	}
 
