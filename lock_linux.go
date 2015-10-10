@@ -66,7 +66,7 @@ func (f *flock) String() string {
 
 }
 
-// Lock is a blocking call to try and take the file lock. It will wait until it
+// Lock is a none-blocking call to try and take the file lock. It will wait until it
 // is able to obtain the exclusive file lock. It's recommended that TryLock() be
 // used over this function. This function may block the ability to query the
 // current Locked() status due to a RW-mutex lock.
@@ -87,7 +87,8 @@ func (f *flock) Lock() error {
 		}
 	}
 
-	err := syscall.Flock(int(f.fh.Fd()), syscall.LOCK_EX)
+	err := syscall.Flock(int(f.fh.Fd()), syscall.LOCK_EX|syscall.LOCK_NB)
+
 	f.locked = err == nil
 	return err
 }
@@ -116,34 +117,6 @@ func (f *flock) Unlock() error {
 		f.locked = false
 		f.fh = nil
 	}
-	return err
-}
-
-// TryLock is the preferred function for taking a file lock. This function does
-// take a RW-mutex lock before it tries to lock the file, so there is the
-// possibility that this function may block for a short time if another goroutine
-// is trying to take any action.
-//
-// The actual file lock is non-blocking. If we are unable to get the exclusive
-// file lock, the function will return error instead of waiting for the lock.
-// If we get the lock, we also set the *Flock instance as being locked.
-func (f *flock) TryLock() error {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-
-	if f.locked {
-		return nil
-	}
-
-	if f.fh == nil {
-		if err := f.setFh(); err != nil {
-			return err
-		}
-	}
-
-	err := syscall.Flock(int(f.fh.Fd()), syscall.LOCK_EX|syscall.LOCK_NB)
-
-	f.locked = err == nil
 	return err
 }
 

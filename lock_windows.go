@@ -68,10 +68,6 @@ func (f *flock) Lock() error {
 	return err
 }
 
-func (f *flock) TryLock() error {
-	return f.Lock()
-}
-
 func (f *flock) Unlock() error {
 	f.mu.Lock()
 	defer f.mu.Unlock()

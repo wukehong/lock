@@ -28,8 +28,6 @@ var (
 type FLocker interface {
 	Lock() error
 
-	TryLock() error
-
 	Unlock() error
 
 	Locked() bool
