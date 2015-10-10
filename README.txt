@@ -1,3 +1,5 @@
 File locking library.
 
-See http://godoc.org/github.com/camlistore/lock
+fork from https://github.com/theckman/go-flock/blob/master/flock.go
+          https://github.com/camlistore/lock
+

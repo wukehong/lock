@@ -41,12 +41,6 @@ func TestLock(t *testing.T) {
 	if e := lock1.Lock(); e != nil || !lock1.Locked() {
 		t.Errorf("lock1 times 2 error:%v,%v", lock1.Locked(), e)
 	}
-	if e := lock1.TryLock(); e != nil || !lock1.Locked() {
-		t.Errorf("trylock1 times 1 error:%v,%v", lock1.Locked(), e)
-	}
-	if e := lock1.TryLock(); e != nil || !lock1.Locked() {
-		t.Errorf("trylock1 times 2 error:%v,%v", lock1.Locked(), e)
-	}
 
 	if e := lock2.Lock(); e == nil || lock2.Locked() {
 		t.Errorf("lock2 times 1 error:%v,%v", lock2.Locked(), e)
@@ -54,17 +48,10 @@ func TestLock(t *testing.T) {
 	if e := lock2.Lock(); e == nil || lock2.Locked() {
 		t.Errorf("lock2 times 2 error:%v,%v", lock2.Locked(), e)
 	}
-	if e := lock2.TryLock(); e == nil || lock2.Locked() {
-		t.Errorf("trylock2 times 1 error:%v,%v", lock2.Locked(), e)
-	}
-	if e := lock2.TryLock(); e == nil || lock2.Locked() {
-		t.Errorf("trylock2 times 2 error:%v,%v", lock2.Locked(), e)
-	}
 
 	if e := lock1.Unlock(); e != nil || lock1.Locked() {
 		t.Errorf("unlock1 times 1 error:%v,%v", lock1.Locked(), e)
 	}
-
 	if e := lock1.Unlock(); e == nil || lock1.Locked() {
 		t.Errorf("unlock1 times 2 error:%v,%v", lock1.Locked(), e)
 	}
@@ -72,7 +59,6 @@ func TestLock(t *testing.T) {
 	if e := lock2.Lock(); e != nil || !lock2.Locked() {
 		t.Errorf("lock2 times 1 error:%v,%v", lock2.Locked(), e)
 	}
-
 	if e := lock2.Lock(); e != nil || !lock2.Locked() {
 		t.Errorf("lock2 times 1 error:%v,%v", lock2.Locked(), e)
 	}

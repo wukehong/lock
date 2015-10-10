@@ -19,6 +19,7 @@ limitations under the License.
 package lock
 
 import (
+	"fmt"
 	"path/filepath"
 	"sync"
 	"syscall"
@@ -67,7 +68,7 @@ func (f *flock) String() string {
 	}
 }
 
-func (f *flock) Lock() error {
+func (f *flock) UBLock() error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
