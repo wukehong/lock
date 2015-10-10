@@ -1,5 +1,3 @@
-package lock
-
 // +build darwin dragonfly freebsd linux netbsd openbsd
 
 // Copyright 2015 Tim Heckman. All rights reserved.
@@ -15,6 +13,8 @@ package lock
 
 //fork from https://github.com/theckman/go-flock/blob/master/flock.go
 
+package lock
+
 import (
 	"fmt"
 	"os"
@@ -23,8 +23,6 @@ import (
 	"syscall"
 )
 
-// Flock is the struct type to handle file locking. All fields are unexported,
-// with access to some of the fields provided by getter methods (Path() and Locked()).
 type flock struct {
 	path    string
 	absPath string
@@ -33,9 +31,7 @@ type flock struct {
 	locked  bool
 }
 
-// NewFlock is a function to return a new instance of *Flock. The only parameter
-// it takes is the path to the desired lockfile.
-func NewFlock(path string) FLocker {
+func NewFlock(path string) Flocker {
 	f := &flock{path: path}
 	f.absPath, _ = filepath.Abs(path)
 	return f
@@ -61,7 +57,6 @@ func (f *flock) String() string {
 	} else {
 		return fmt.Sprintf("'%s' unlock", f.path)
 	}
-
 }
 
 func (f *flock) Lock() error {

@@ -31,10 +31,32 @@ type flock struct {
 	locked  bool
 }
 
-func NewFlock(path string) FLocker {
+func NewFlock(path string) Flocker {
 	f := &flock{path: path}
 	f.absPath, _ = filepath.Abs(path)
 	return f
+}
+
+func (f *flock) Path() string {
+	return f.path
+}
+
+func (f *flock) Locked() bool {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+
+	return f.locked
+}
+
+func (f *flock) String() string {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+
+	if f.locked {
+		return fmt.Sprintf("'%s' locked", f.path)
+	} else {
+		return fmt.Sprintf("'%s' unlock", f.path)
+	}
 }
 
 func (f *flock) Lock() error {
@@ -71,15 +93,4 @@ func (f *flock) Unlock() error {
 		f.fh = nil
 	}
 	return err
-}
-
-func (f *flock) Locked() bool {
-	f.mu.RLock()
-	defer f.mu.RUnlock()
-
-	return f.locked
-}
-
-func (f *flock) Path() string {
-	return f.path
 }

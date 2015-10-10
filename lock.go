@@ -25,7 +25,7 @@ var (
 	ErrUnlock = errors.New("already unlocked")
 )
 
-type FLocker interface {
+type Flocker interface {
 	// Lock is a none-blocking call to try and take the file lock.
 	// If we are already locked, this function short-circuits and returns immediately
 	//
